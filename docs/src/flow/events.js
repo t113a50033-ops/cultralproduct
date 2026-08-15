@@ -46,7 +46,7 @@ export function resolveEvent(ev,mode,done){
  if(cur>=pk){ statBonus(bud,out); }
  else {
  while(bud>0 && cur<pk){
- let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64
+ let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64);
  bud--; cr++; if(cr>=c){ cr-=c; cur++; gained++; }
  }
  if(!S.carry) S.carry={}; S.carry[k]=cr; S.ab[k]=cur;
