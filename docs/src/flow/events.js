@@ -28,14 +28,44 @@ export function drawEvents(n,done){
   }}]);
 }
 export function resolveEvent(ev,mode,done){
-  done=done||function(){};
-  const od=evOdds(); /* 與畫面顯示同源,保證所見即所得 */
-  if(mode==='safe')S.cntSave++;
-  let good,tag;
-  if(mode==='safe'){ good=chance(od.safe); tag='保守應對'; }
-  else if(mode==='bold'){ good=chance(od.bold); tag='全力一搏';
-    if(good)S.cntBoldWin++; else S.cntBoldFail++; }
-  else { good=chance(od.norm); tag=''; }
+  function resolveEvent(ev,mode,done){
+ done=done||function(){};
+ const od=evOdds();
+ if(mode==='safe')S.cntSave++;
+ let good = true; // 強制結果必為成功
+ let tag = mode==='safe'?'保守應對':mode==='bold'?'全力一搏':'';
+ if(mode==='safe') S.cntSaveWin=(S.cntSaveWin||0)+1; // 累積自律狂成功次數
+ if(mode==='bold') S.cntBoldWin=(S.cntBoldWin||0)+1; // 累積大心臟成功次數
+ let mag=mode==='safe'?1:mode==='bold'?3:2;
+ if(mode==='bold'&&S.traits.clutch)mag=4;
+ const fx=ev.g; let out=[],touched=false;
+ const applyAbil=(k,dir)=>{ const step=dir*mag;
+ const pk=(S.pot&&S.pot[k])||62;
+ const isP=S.pos==='P';
+ let cur=S.ab[k], bud=step, cr=(S.carry&&S.carry[k])||0, gained=0;
+ if(cur>=pk){ statBonus(bud,out); }
+ else {
+ while(bud>0 && cur<pk){
+ let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64
+ bud--; cr++; if(cr>=c){ cr-=c; cur++; gained++; }
+ }
+ if(!S.carry) S.carry={}; S.carry[k]=cr; S.ab[k]=cur;
+ if(gained>0) out.push(`${ABL[k]} <span class="up">+${gained}</span>`);
+ else if(bud<=0) out.push(`${ABL[k]}：能力加點，但不足以提升一級`);
+ if(bud>0) statBonus(bud,out);
+ }
+ touched=true;
+ };
+ for(const k in fx){
+ if(k==='inj'){ let v=({1:8,2:12,3:16,4:16})[mag]; if(mode==='bold'&&S.tr
+ else if(k==='rand'){ applyAbil(pick(POS_AB[S.pos]),1); }
+ else if(k in S.ab){ applyAbil(k,1); }
+ }
+ if(!touched){ applyAbil(pick(POS_AB[S.pos]),1); }
+ card('good','事件卡｜'+ev.n+(tag?`（${tag}）`:''),
+ `${ev.gt}。${mode==='bold'?'<b class="hl">豪賭成功！</b>':''}<br>${out.joi
+ checkTraitsMid();
+ done();
   if(mode==='safe'&&good)S.cntSaveWin=(S.cntSaveWin||0)+1; /* 自律狂:保守成功才算 */
   if((ev.n==='宵夜文化'||ev.n==='場外代言邀約')&&mode!=='safe'&&!good)S.cntSnack++;
   /* 效果固定 ±1;豪賭成功則同一項再 +1(等於賭中加倍成長),豪賭失敗則 -1 再 -1 */
@@ -75,7 +105,7 @@ export function resolveEvent(ev,mode,done){
     `${good?ev.gt:ev.bt}。${mode==='bold'&&good?'<b class="hl">豪賭成功！</b>':''}${mode==='bold'&&!good?'<b class="dn">豪賭失敗……</b>':''}<br>${out.join('｜')||'（能力加點，但不足以提升一級）'}`);
   checkTraitsMid();
   done();
-}
+ }
 /* 賽季中即時可解鎖的特性 */
 export function allocDone(touched,isDice){
   const keys=Object.keys(touched);
@@ -86,9 +116,9 @@ export function allocDone(touched,isDice){
     if(focused&&focused===S.samePickKey)S.samePick++;
     else if(focused){ S.samePickKey=focused; S.samePick=1; }
     else { S.samePickKey=null; S.samePick=0; }
-    if(S.samePick>=3&&!S.traits.combo){ S.traits.combo=true; S.samePickBonus=true;
+    if(S.samePick>=1&&!S.traits.combo){ S.traits.combo=true; S.samePickBonus=true;
       S.comboKey=S.samePickKey; /* 鎖定解鎖當下的能力,之後不再變動 */
-      traitCard('combo','大巧不工',`連續三年，你把所有汗水都澆在同一個工具上——<b class="hl">季初系統會自動擲 1 顆骰，永遠加在你專精的「${ABL[S.comboKey]}」上</b>。專精者的複利。`); }
+      traitCard('combo','大巧不工',`長達一年，你把所有汗水都澆在同一個工具上——<b class="hl">季初系統會自動擲 1 顆骰，永遠加在你專精的「${ABL[S.comboKey]}」上</b>。專精者的複利。`); }
   }
   /* 大器晚成:25 歲後單季加點總幅度 >=8 */
   const gain=Object.values(touched).reduce((a,b)=>a+b,0);
@@ -104,11 +134,11 @@ export function allocDone(touched,isDice){
     board(1); }
 }
 export function checkTraitsMid(){
-  /* 自律狂:25 歲前累積保守「成功」15 次 + 從未外遇被抓 + 宵夜 <5 次 */
-  if(!S.traits.disc&&S.age<25&&(S.cntSaveWin||0)>=15&&S.love.caught===0&&S.cntSnack<5){
+  /* 自律狂:25 歲前累積保守「成功」5 次 + 從未外遇被抓 + 宵夜 <5 次 */
+  if(!S.traits.disc&&S.age<25&&(S.cntSaveWin||0)>=5&&S.love.caught===0&&S.cntSnack<5){
     traitCard('disc','自律狂','你見過凌晨四點的洛杉磯嗎？——年紀輕輕就把身體當成聖殿經營，沒有派對、沒有酒精，只有重訓室的鐵片聲：<b class="hl">整條衰退曲線延後兩年</b>，你的巔峰比同梯更長。'); }
-  /* 大心臟:25 歲前豪賭(全力一搏)成功 7 次(允許失敗) */
-  if(!S.traits.clutch&&S.age<25&&S.cntBoldWin>=7){
+  /* 大心臟:25 歲前豪賭(全力一搏)成功 4 次(允許失敗) */
+  if(!S.traits.clutch&&S.age<25&&S.cntBoldWin>=4){
     traitCard('clutch','大心臟','每次的豪賭淬鍊出你無與無比的心性，愈刺激的狀況只會讓你更加幹勁十足。從此以後，愈賭愈強，成功獎勵愈大，失敗懲罰愈少，不過在豪賭的路上，還是要注意一下身邊的其他人……<br><b class="hl">「全力一搏」成功率提升至天才級、成功加成 +4、失敗只 −2、受傷風險降到普通級；國際賽個人成績獲得小幅加成</b>。'); }
   /* 外務纏身:宵夜/代言/緋聞累計(以宵夜次數 + 感情事件觸發次數估) */
   if(!S.traits.distract&&!S.traits.disc&&(S.love.affairs+S.love.caught+S.cntSnack)>=4&&(S.love.affairs+S.love.caught)>=1){
