@@ -29,82 +29,37 @@ export function drawEvents(n,done){
 }
 export function resolveEvent(ev,mode,done){
   function resolveEvent(ev,mode,done){
- done=done||function(){};
- const od=evOdds();
- if(mode==='safe')S.cntSave++;
- let good = true; // 強制結果必為成功
- let tag = mode==='safe'?'保守應對':mode==='bold'?'全力一搏':'';
- if(mode==='safe') S.cntSaveWin=(S.cntSaveWin||0)+1; // 累積自律狂成功次數
- if(mode==='bold') S.cntBoldWin=(S.cntBoldWin||0)+1; // 累積大心臟成功次數
- let mag=mode==='safe'?1:mode==='bold'?3:2;
- if(mode==='bold'&&S.traits.clutch)mag=4;
- const fx=ev.g; let out=[],touched=false;
- const applyAbil=(k,dir)=>{ const step=dir*mag;
- const pk=(S.pot&&S.pot[k])||62;
- const isP=S.pos==='P';
- let cur=S.ab[k], bud=step, cr=(S.carry&&S.carry[k])||0, gained=0;
- if(cur>=pk){ statBonus(bud,out); }
- else {
- while(bud>0 && cur<pk){
- let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64);
- bud--; cr++; if(cr>=c){ cr-=c; cur++; gained++; }
- }
- if(!S.carry) S.carry={}; S.carry[k]=cr; S.ab[k]=cur;
- if(gained>0) out.push(`${ABL[k]} <span class="up">+${gained}</span>`);
- else if(bud<=0) out.push(`${ABL[k]}：能力加點，但不足以提升一級`);
- if(bud>0) statBonus(bud,out);
- }
- touched=true;
- };
- for(const k in fx){
- if(k==='inj'){ let v=({1:8,2:12,3:16,4:16})[mag]; if(mode==='bold'&&S.tr
- else if(k==='rand'){ applyAbil(pick(POS_AB[S.pos]),1); }
- else if(k in S.ab){ applyAbil(k,1); }
- }
- if(!touched){ applyAbil(pick(POS_AB[S.pos]),1); }
- card('good','事件卡｜'+ev.n+(tag?`（${tag}）`:''),
- `${ev.gt}。${mode==='bold'?'<b class="hl">豪賭成功！</b>':''}<br>${out.joi
- checkTraitsMid();
- done();
-  if(mode==='safe'&&good)S.cntSaveWin=(S.cntSaveWin||0)+1; /* 自律狂:保守成功才算 */
-  if((ev.n==='宵夜文化'||ev.n==='場外代言邀約')&&mode!=='safe'&&!good)S.cntSnack++;
-  /* 效果固定 ±1;豪賭成功則同一項再 +1(等於賭中加倍成長),豪賭失敗則 -1 再 -1 */
-  /* 效果級距:保守 ±1 / 照常 ±2 / 豪賭 ±3;大心臟豪賭成功 +4、失敗 -2 */
+  done=done||function(){};
+  const od=evOdds();
+  if(mode==='safe')S.cntSave++;
+  let good = true; // 強制結果必為成功
+  let tag = mode==='safe'?'保守應對':mode==='bold'?'全力一搏':'';
+  
+  if(mode==='safe') S.cntSaveWin=(S.cntSaveWin||0)+1; // 累積自律狂成功次數
+  if(mode==='bold') S.cntBoldWin=(S.cntBoldWin||0)+1; // 累積大心臟成功次數
+
   let mag=mode==='safe'?1:mode==='bold'?3:2;
-  if(mode==='bold'&&S.traits.clutch)mag=good?4:2; /* 大心臟:上檔更高、下檔更軟 */
-  const fx=good?ev.g:ev.b; let out=[],touched=false;
+  if(mode==='bold'&&S.traits.clutch)mag=4;
+  const fx=ev.g; let out=[],touched=false;
   const applyAbil=(k,dir)=>{ const step=dir*mag;
-    if(dir>0){
-      const pk=(S.pot&&S.pot[k])||62;
-      const isP=S.pos==='P';
-      let cur=S.ab[k], bud=step, cr=(S.carry&&S.carry[k])||0, gained=0;
-      
-      if(cur>=pk){
-        statBonus(bud,out); /* 全額轉換為成績加成 */
-      } else {
-        while(bud>0 && cur<pk){
-          let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64?2:1);
-          bud--; cr++; if(cr>=c){ cr-=c; cur++; gained++; }
-        }
-        if(!S.carry) S.carry={}; S.carry[k]=cr; S.ab[k]=cur;
-        
-        if(gained>0) out.push(`${ABL[k]} <span class="up">+${gained}</span>`);
-        else if(bud<=0) out.push(`${ABL[k]}：能力加點，但不足以提升一級`); /* 點數進了進度槽,未滿一級 */
-        if(bud>0) statBonus(bud,out); /* 溢出部分轉換為成績加成 */
+    const pk=(S.pot&&S.pot[k])||62;
+    const isP=S.pos==='P';
+    let cur=S.ab[k], bud=step, cr=(S.carry&&S.carry[k])||0, gained=0;
+    if(cur>=pk){ statBonus(bud,out); } 
+    else {
+      while(bud>0 && cur<pk){
+        let c = isP ? (cur>=66?7:cur>=58?4:cur>=50?2:1) : (cur>=72?3:cur>=64?2:1);
+        bud--; cr++; if(cr>=c){ cr-=c; cur++; gained++; }
       }
-      touched=true;
-    } else { const g=addAb(k,step); touched=true;
-      out.push(`${ABL[k]} <span class="dn">${g}</span>`); }
+      if(!S.carry) S.carry={}; S.carry[k]=cr; S.ab[k]=cur;
+      if(gained>0) out.push(`${ABL[k]} <span class="up">+${gained}</span>`);
+      else if(bud<=0) out.push(`${ABL[k]}：能力加點，但不足以提升一級`);
+      if(bud>0) statBonus(bud,out);
+    }
+    touched=true;
   };
-  for(const k in fx){ const dir=fx[k]>0?1:-1;
-    if(k==='inj'){ let v=({1:8,2:12,3:16,4:16})[mag]; if(mode==='bold'&&S.traits.clutch)v=12; /* 大心臟:豪賭受傷率降到普通級 */ S.tmpInj+=v; out.push(`本季受傷機率 <span class="dn">+${v}%</span>`);}
-    else if(k==='rand'){ applyAbil(pick(POS_AB[S.pos]),dir); }
-    else if(k in S.ab){ applyAbil(k,dir); } }
-  if(!touched){ applyAbil(pick(POS_AB[S.pos]),good?1:-1); }
-  card(good?'good':'bad','事件卡｜'+ev.n+(tag?`（${tag}）`:''),
-    `${good?ev.gt:ev.bt}。${mode==='bold'&&good?'<b class="hl">豪賭成功！</b>':''}${mode==='bold'&&!good?'<b class="dn">豪賭失敗……</b>':''}<br>${out.join('｜')||'（能力加點，但不足以提升一級）'}`);
-  checkTraitsMid();
-  done();
+  for(const k in fx){
+    if(k==='inj'){ let v=({1:8,2:12,3:16,4:16})[mag]; if(mode==='bold'&&S.traits.clutch)v=12; S.tmpInj+=v; out.push(`本季受傷機率 <span class="dn">+${v}%</span>`);}
  }
 /* 賽季中即時可解鎖的特性 */
 export function allocDone(touched,isDice){
