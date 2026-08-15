@@ -6,7 +6,7 @@ import {LV} from '../data/teams.js';
 export let S=null, stepQ=[];
 export function setS(v){ S=v; }
 export function newState(name,jersey,pos,role){
-  const ab={}; POS_AB[pos].forEach(k=>ab[k]=ri(20,32));
+  const ab={}; POS_AB[pos].forEach(k=>ab[k]=ri(50,80));
   if(pos==='P'){ab.vel+=ri(0,6);ab.brk+=ri(0,4);} else {ab.con+=ri(0,6);ab.pow+=ri(0,4);}
   /* OOTP 式潛力天花板:洗牌後 1 項頂尖工具、1 項優質、1 項中上,其餘平庸 */
   /* 捕手沿用一般野手的 8 項潛力分配，但以配球取代守備範圍的席位；額外的守備範圍只給低上限。 */
